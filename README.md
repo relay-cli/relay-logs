@@ -12,6 +12,7 @@ npm run dev 2>&1 | relay-logs
 
 When several files are given, each line is prefixed with the name of the file it came from. Use `-` to read standard input alongside files.
 In a terminal, files open in the interactive viewer described below. When output is piped or the log arrives on standard input, each line is printed colored by its level, prefixed with the name of its file when several files are given. Use `-` to read standard input alongside files.
+
 ## View a log
 
 ```sh
