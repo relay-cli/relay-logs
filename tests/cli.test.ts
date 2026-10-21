@@ -19,6 +19,11 @@ describe('CLI options', () => {
     });
   });
 
+  it('reads follow and line counts', () => {
+    expect(parseCliOptions(['-f', '--lines=5', 'a.log'])).toMatchObject({follow: true, lines: 5});
+    expect(() => parseCliOptions(['-n', 'many'])).toThrow('whole number');
+  });
+
   it('rejects unknown options', () => {
     expect(() => parseCliOptions(['--wat'])).toThrow('Unknown option');
   });
@@ -37,6 +42,13 @@ describe('relay-logs command', () => {
       join(directory, 'worker.log'),
     ]);
     expect(stdout).toBe('api.log: INFO started\napi.log: ERROR failed\nworker.log: WARN slow\n');
+  }, 30_000);
+
+  it('starts with the last lines when asked', async () => {
+    const directory = mkdtempSync(join(tmpdir(), 'relay-logs-'));
+    writeFileSync(join(directory, 'app.log'), 'one\ntwo\nthree\n');
+    const {stdout} = await run(process.execPath, [tsx, cli, '-n', '2', join(directory, 'app.log')]);
+    expect(stdout).toBe('two\nthree\n');
   }, 30_000);
 
   it('colors by level when asked', async () => {
