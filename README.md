@@ -12,6 +12,17 @@ npm run dev 2>&1 | relay-logs
 
 When several files are given, each line is prefixed with the name of the file it came from. Use `-` to read standard input alongside files.
 
+## Follow a log
+
+```sh
+relay-logs -f app.log
+relay-logs -f -n 50 api.log worker.log
+```
+
+`-f` keeps printing lines as files grow, like `tail -F`. It starts with the last 10 lines of each file, or the number given with `-n`. Lines appear only once their line ending has been written, so a line still being written is never split. When a file is truncated, Relay Logs reads it again from the start, and when it is replaced by log rotation, the new file is read from its first line. A file that does not exist yet is waited for.
+
+When several files are followed, their lines are interleaved in the order they arrive.
+
 ## Recognized lines
 
 - Text lines with an optional leading timestamp and a level such as `ERROR`, `[warn]`, `<info>`, or `FATAL:`

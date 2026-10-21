@@ -2,7 +2,7 @@
 
 import {helpText, parseCliOptions} from './cli/options.js';
 import {parseLine} from './core/entry.js';
-import {openSources} from './core/sources.js';
+import {concatSources, type LogSource, mergeSources, openSources} from './core/sources.js';
 import {formatPlain} from './format/plain.js';
 import {relayLogsVersion} from './version.js';
 
@@ -35,23 +35,22 @@ const main = async (): Promise<void> => {
     color: options.color ?? (process.stdout.isTTY && process.env.NO_COLOR === undefined),
     showSource: options.files.length > 1,
   };
+  const sources = openSources(options.files, {
+    follow: options.follow,
+    ...(options.lines === undefined ? {} : {lines: options.lines}),
+  });
+  const onError = (source: LogSource, error: unknown): void => {
+    process.stderr.write(
+      `relay-logs: ${source.label ?? 'stdin'}: ${error instanceof Error ? error.message : String(error)}\n`,
+    );
+    process.exitCode = 1;
+  };
+  const lines = options.follow ? mergeSources(sources, onError) : concatSources(sources, onError);
   let seq = 0;
-  for (const source of openSources(options.files)) {
-    try {
-      for await (const line of source.lines) {
-        seq += 1;
-        const entry = parseLine(line, {
-          seq,
-          ...(source.label === undefined ? {} : {source: source.label}),
-        });
-        process.stdout.write(`${formatPlain(entry, format)}\n`);
-      }
-    } catch (error) {
-      process.stderr.write(
-        `relay-logs: ${source.label ?? 'stdin'}: ${error instanceof Error ? error.message : String(error)}\n`,
-      );
-      process.exitCode = 1;
-    }
+  for await (const {label, line} of lines) {
+    seq += 1;
+    const entry = parseLine(line, {seq, ...(label === undefined ? {} : {source: label})});
+    process.stdout.write(`${formatPlain(entry, format)}\n`);
   }
 };
 
