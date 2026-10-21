@@ -8,6 +8,8 @@ export interface CliOptions {
   color: boolean | undefined;
   /** Keep reading files as they grow. */
   follow: boolean;
+  /** Print lines instead of opening the interactive viewer. */
+  plain: boolean;
   /** Start with only the last lines of each file. */
   lines: number | undefined;
   minLevel: Level | undefined;
@@ -22,8 +24,8 @@ Usage:
   relay-logs [options] [file...]
   some-command | relay-logs [options]
 
-Reads log files, or standard input when no file is given, and prints each line colored by its
-level.
+Opens log files in an interactive viewer with search and level filters. When output is
+redirected or the log arrives on standard input, prints each line colored by its level instead.
 
 Options:
   -f, --follow       Keep printing lines as files grow, across rotation and truncation
@@ -32,6 +34,7 @@ Options:
                      error, fatal)
   -g, --grep <re>    Show only lines matching this pattern; repeat to match any of several
   -x, --exclude <re> Hide lines matching this pattern; may be repeated
+  --plain            Print lines instead of opening the viewer
   --color            Always color output
   --no-color         Never color output
   -h, --help         Show this help
@@ -44,6 +47,7 @@ export const parseCliOptions = (arguments_: readonly string[]): CliOptions => {
     version: false,
     color: undefined,
     follow: false,
+    plain: false,
     lines: undefined,
     minLevel: undefined,
     include: [],
@@ -70,6 +74,7 @@ export const parseCliOptions = (arguments_: readonly string[]): CliOptions => {
     else if (name === '-l' || name === '--level') options.minLevel = parseLevel(value());
     else if (name === '-g' || name === '--grep') options.include.push(compilePattern(value()));
     else if (name === '-x' || name === '--exclude') options.exclude.push(compilePattern(value()));
+    else if (argument === '--plain') options.plain = true;
     else if (argument === '--color') options.color = true;
     else if (argument === '--no-color') options.color = false;
     else throw new Error(`Unknown option: ${argument}`);

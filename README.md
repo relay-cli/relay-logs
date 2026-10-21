@@ -1,6 +1,6 @@
 # Relay Logs
 
-Relay Logs reads log files and command output in the terminal. It recognizes the level, timestamp, and message of each line, whether the line is plain text, JSON, or logfmt, and colors it by level.
+Relay Logs is a live log viewer for the terminal. It follows files as they grow, recognizes the level, timestamp, and message of each line, whether the line is plain text, JSON, or logfmt, and lets you filter by level and search as lines arrive.
 
 ## Read a log
 
@@ -11,6 +11,31 @@ npm run dev 2>&1 | relay-logs
 ```
 
 When several files are given, each line is prefixed with the name of the file it came from. Use `-` to read standard input alongside files.
+In a terminal, files open in the interactive viewer described below. When output is piped or the log arrives on standard input, each line is printed colored by its level, prefixed with the name of its file when several files are given. Use `-` to read standard input alongside files.
+## View a log
+
+```sh
+relay-logs -f api.log worker.log
+```
+
+When standard input and output are both terminals, Relay Logs opens an interactive viewer. Each line shows its time, level, source, and message, and the newest line stays in view until you scroll up. Press `?` for the keyboard reference and `q` to quit.
+
+| Key             | Action                                                        |
+| --------------- | ------------------------------------------------------------- |
+| `↑`, `k`        | Select the previous line and pause following                  |
+| `↓`, `j`        | Select the next line; reaching the newest line resumes        |
+| `PgUp`, `b`     | Move up a page                                                |
+| `PgDn`, `space` | Move down a page                                              |
+| `g`, `G`        | Jump to the first line or follow the newest one               |
+| `f`             | Pause or resume following                                     |
+| `1`–`6`         | Show or hide trace, debug, info, warn, error, and fatal lines |
+| `/`             | Search with a regular expression and highlight matches        |
+| `n`, `N`        | Jump to the next newer or older match                         |
+| `&`             | Show only matching lines, or all lines again                  |
+| `Esc`           | Clear the search                                              |
+| `c`             | Clear the lines read so far                                   |
+
+The viewer keeps the newest 50,000 lines. Output that is piped or redirected, and logs read from standard input, are printed as plain lines instead; `--plain` does the same in a terminal.
 
 ## Follow a log
 
