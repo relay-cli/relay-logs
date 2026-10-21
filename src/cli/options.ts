@@ -1,3 +1,6 @@
+import {compilePattern} from '../core/filter.js';
+import {type Level, levels, parseLevelName} from '../core/levels.js';
+
 export interface CliOptions {
   help: boolean;
   version: boolean;
@@ -7,6 +10,9 @@ export interface CliOptions {
   follow: boolean;
   /** Start with only the last lines of each file. */
   lines: number | undefined;
+  minLevel: Level | undefined;
+  include: RegExp[];
+  exclude: RegExp[];
   files: string[];
 }
 
@@ -22,6 +28,10 @@ level.
 Options:
   -f, --follow       Keep printing lines as files grow, across rotation and truncation
   -n, --lines <n>    Start with the last n lines of each file (10 when following)
+  -l, --level <lvl>  Show only entries at this level or above (trace, debug, info, warn,
+                     error, fatal)
+  -g, --grep <re>    Show only lines matching this pattern; repeat to match any of several
+  -x, --exclude <re> Hide lines matching this pattern; may be repeated
   --color            Always color output
   --no-color         Never color output
   -h, --help         Show this help
@@ -35,6 +45,9 @@ export const parseCliOptions = (arguments_: readonly string[]): CliOptions => {
     color: undefined,
     follow: false,
     lines: undefined,
+    minLevel: undefined,
+    include: [],
+    exclude: [],
     files: [],
   };
   let onlyFiles = false;
@@ -54,6 +67,9 @@ export const parseCliOptions = (arguments_: readonly string[]): CliOptions => {
     else if (argument === '-v' || argument === '--version') options.version = true;
     else if (argument === '-f' || argument === '--follow') options.follow = true;
     else if (name === '-n' || name === '--lines') options.lines = parseCount(name, value());
+    else if (name === '-l' || name === '--level') options.minLevel = parseLevel(value());
+    else if (name === '-g' || name === '--grep') options.include.push(compilePattern(value()));
+    else if (name === '-x' || name === '--exclude') options.exclude.push(compilePattern(value()));
     else if (argument === '--color') options.color = true;
     else if (argument === '--no-color') options.color = false;
     else throw new Error(`Unknown option: ${argument}`);
@@ -74,4 +90,12 @@ const parseCount = (name: string, text: string): number => {
     throw new Error(`${name} must be a whole number, not ${text}`);
   }
   return count;
+};
+
+const parseLevel = (text: string): Level => {
+  const level = parseLevelName(text);
+  if (level === undefined) {
+    throw new Error(`Unknown level: ${text}. Use one of ${levels.join(', ')}`);
+  }
+  return level;
 };

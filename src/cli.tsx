@@ -2,6 +2,7 @@
 
 import {helpText, parseCliOptions} from './cli/options.js';
 import {parseLine} from './core/entry.js';
+import {createFilter} from './core/filter.js';
 import {concatSources, type LogSource, mergeSources, openSources} from './core/sources.js';
 import {formatPlain} from './format/plain.js';
 import {relayLogsVersion} from './version.js';
@@ -46,10 +47,16 @@ const main = async (): Promise<void> => {
     process.exitCode = 1;
   };
   const lines = options.follow ? mergeSources(sources, onError) : concatSources(sources, onError);
+  const shown = createFilter({
+    ...(options.minLevel === undefined ? {} : {minLevel: options.minLevel}),
+    include: options.include,
+    exclude: options.exclude,
+  });
   let seq = 0;
   for await (const {label, line} of lines) {
     seq += 1;
     const entry = parseLine(line, {seq, ...(label === undefined ? {} : {source: label})});
+    if (!shown(entry)) continue;
     process.stdout.write(`${formatPlain(entry, format)}\n`);
   }
 };

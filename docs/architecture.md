@@ -7,4 +7,4 @@ Relay Logs turns lines from files or standard input into log entries and display
 3. `parseLine` sanitizes a line and recognizes its level, timestamp, and message. The original text is kept in `raw`, so nothing is lost when a line is not recognized.
 4. `formatPlain` prints an entry for pipes and plain terminals.
 
-Filtering and the interactive viewer build on these modules.
+5. `createFilter` decides which entries are shown by level and pattern, carrying the decision for an entry over to its indented continuation lines.
