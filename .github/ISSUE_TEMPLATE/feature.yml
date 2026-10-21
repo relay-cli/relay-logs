@@ -1,0 +1,23 @@
+name: Feature request
+description: Suggest a focused improvement to reading logs in the terminal.
+body:
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use case
+      description: Describe the log you were reading and what was hard to find in it.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - label: This request concerns following, parsing, filtering, or searching logs rather than alerting or shipping them elsewhere.
+          required: true
