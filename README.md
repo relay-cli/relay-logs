@@ -23,6 +23,17 @@ relay-logs -f -n 50 api.log worker.log
 
 When several files are followed, their lines are interleaved in the order they arrive.
 
+## Filter
+
+```sh
+relay-logs -l warn app.log
+relay-logs -f -g timeout -g refused -x /health api.log
+```
+
+`-l` shows only entries at a level or above: `trace`, `debug`, `info`, `warn`, `error`, or `fatal`. Lines without a recognizable level are hidden by `-l`, except indented lines such as stack frames, which stay with the entry above them.
+
+`-g` shows only lines matching a regular expression, and `-x` hides lines matching one. Both may be repeated. Patterns ignore case unless they contain an uppercase letter.
+
 ## Recognized lines
 
 - Text lines with an optional leading timestamp and a level such as `ERROR`, `[warn]`, `<info>`, or `FATAL:`
