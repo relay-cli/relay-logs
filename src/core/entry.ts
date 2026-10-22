@@ -1,4 +1,5 @@
 import {type EntryLevel, parseLevelName, parseLevelNumber} from './levels.js';
+import {readLogHowlAlert} from './log-howl.js';
 import {sanitizeLine} from './sanitize.js';
 
 export interface LogEntry {
@@ -41,7 +42,16 @@ export const parseLine = (line: string, context: ParseContext): LogEntry => {
     raw,
     ...(context.source === undefined ? {} : {source: context.source}),
   };
-  return {...base, ...(parseJson(raw) ?? parseLogfmt(raw) ?? parseText(raw))};
+  const parsed = parseJson(raw) ?? parseLogfmt(raw) ?? parseText(raw);
+  const alert = parsed.fields === undefined ? undefined : readLogHowlAlert(parsed.fields);
+  if (alert === undefined) return {...base, ...parsed};
+  return {
+    ...base,
+    ...parsed,
+    level: alert.level,
+    message: alert.message,
+    ...(context.source === undefined && alert.source !== undefined ? {source: alert.source} : {}),
+  };
 };
 
 type Parsed = Pick<LogEntry, 'level' | 'message' | 'time' | 'fields'>;

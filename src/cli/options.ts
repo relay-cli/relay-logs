@@ -1,3 +1,10 @@
+import {compilePattern} from '../core/filter.js';
+import {type Level, levels, parseLevelName} from '../core/levels.js';
+
+export const outputFormats = ['text', 'json', 'cards'] as const;
+
+export type OutputFormat = (typeof outputFormats)[number];
+
 export interface CliOptions {
   help: boolean;
   version: boolean;
@@ -5,8 +12,15 @@ export interface CliOptions {
   color: boolean | undefined;
   /** Keep reading files as they grow. */
   follow: boolean;
+  /** Print lines instead of opening the interactive viewer. */
+  plain: boolean;
+  /** How printed lines are written. Any format other than text implies `plain`. */
+  format: OutputFormat;
   /** Start with only the last lines of each file. */
   lines: number | undefined;
+  minLevel: Level | undefined;
+  include: RegExp[];
+  exclude: RegExp[];
   files: string[];
 }
 
@@ -16,12 +30,19 @@ Usage:
   relay-logs [options] [file...]
   some-command | relay-logs [options]
 
-Reads log files, or standard input when no file is given, and prints each line colored by its
-level.
+Opens log files in an interactive viewer with search and level filters. When output is
+redirected or the log arrives on standard input, prints each line colored by its level instead.
 
 Options:
   -f, --follow       Keep printing lines as files grow, across rotation and truncation
   -n, --lines <n>    Start with the last n lines of each file (10 when following)
+  -l, --level <lvl>  Show only entries at this level or above (trace, debug, info, warn,
+                     error, fatal)
+  -g, --grep <re>    Show only lines matching this pattern; repeat to match any of several
+  -x, --exclude <re> Hide lines matching this pattern; may be repeated
+  --plain            Print lines instead of opening the viewer
+  --format <fmt>     Print lines as text (default), json, or cards for piping into
+                     relay-cards
   --color            Always color output
   --no-color         Never color output
   -h, --help         Show this help
@@ -34,7 +55,12 @@ export const parseCliOptions = (arguments_: readonly string[]): CliOptions => {
     version: false,
     color: undefined,
     follow: false,
+    plain: false,
+    format: 'text',
     lines: undefined,
+    minLevel: undefined,
+    include: [],
+    exclude: [],
     files: [],
   };
   let onlyFiles = false;
@@ -54,6 +80,11 @@ export const parseCliOptions = (arguments_: readonly string[]): CliOptions => {
     else if (argument === '-v' || argument === '--version') options.version = true;
     else if (argument === '-f' || argument === '--follow') options.follow = true;
     else if (name === '-n' || name === '--lines') options.lines = parseCount(name, value());
+    else if (name === '-l' || name === '--level') options.minLevel = parseLevel(value());
+    else if (name === '-g' || name === '--grep') options.include.push(compilePattern(value()));
+    else if (name === '-x' || name === '--exclude') options.exclude.push(compilePattern(value()));
+    else if (argument === '--plain') options.plain = true;
+    else if (name === '--format') options.format = parseFormat(value());
     else if (argument === '--color') options.color = true;
     else if (argument === '--no-color') options.color = false;
     else throw new Error(`Unknown option: ${argument}`);
@@ -74,4 +105,20 @@ const parseCount = (name: string, text: string): number => {
     throw new Error(`${name} must be a whole number, not ${text}`);
   }
   return count;
+};
+
+const parseLevel = (text: string): Level => {
+  const level = parseLevelName(text);
+  if (level === undefined) {
+    throw new Error(`Unknown level: ${text}. Use one of ${levels.join(', ')}`);
+  }
+  return level;
+};
+
+const parseFormat = (text: string): OutputFormat => {
+  const format = outputFormats.find((candidate) => candidate === text);
+  if (format === undefined) {
+    throw new Error(`Unknown format: ${text}. Use one of ${outputFormats.join(', ')}`);
+  }
+  return format;
 };
