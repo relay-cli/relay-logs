@@ -48,6 +48,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsx src/cli.tsx",
+    "demo": "tsx src/cli.tsx examples/app.log",
+    "demo:plain": "tsx src/cli.tsx --plain examples/app.log",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
