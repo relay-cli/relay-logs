@@ -6,4 +6,5 @@ export * from './core/follow.js';
 export * from './core/sanitize.js';
 export * from './core/sources.js';
 export * from './format/plain.js';
+export * from './viewer/index.js';
 export {relayLogsVersion} from './version.js';
