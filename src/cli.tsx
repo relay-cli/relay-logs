@@ -5,6 +5,8 @@ import {type CliOptions, helpText, parseCliOptions} from './cli/options.js';
 import {type LogEntry, parseLine} from './core/entry.js';
 import {createFilter} from './core/filter.js';
 import {concatSources, type LogSource, mergeSources, openSources} from './core/sources.js';
+import {formatCards} from './format/cards.js';
+import {formatJson} from './format/json.js';
 import {formatPlain} from './format/plain.js';
 import {LogBuffer} from './viewer/buffer.js';
 import {LogViewer} from './viewer/LogViewer.js';
@@ -44,16 +46,22 @@ const runPlain = async (options: CliOptions): Promise<void> => {
     if (error.code === 'EPIPE') process.exit(0);
     throw error;
   });
-  const format = {
+  const plain = {
     color: options.color ?? (process.stdout.isTTY && process.env.NO_COLOR === undefined),
     showSource: options.files.length > 1,
   };
+  const format =
+    options.format === 'json'
+      ? formatJson
+      : options.format === 'cards'
+        ? formatCards
+        : (entry: LogEntry) => formatPlain(entry, plain);
   const onError = (source: LogSource, error: unknown): void => {
     process.stderr.write(`relay-logs: ${source.label ?? 'stdin'}: ${errorMessage(error)}\n`);
     process.exitCode = 1;
   };
   for await (const entry of readEntries(options, undefined, onError)) {
-    process.stdout.write(`${formatPlain(entry, format)}\n`);
+    process.stdout.write(`${format(entry)}\n`);
   }
 };
 
@@ -108,6 +116,7 @@ const main = async (): Promise<void> => {
   // than the log itself.
   const interactive =
     !options.plain &&
+    options.format === 'text' &&
     process.stdout.isTTY &&
     process.stdin.isTTY &&
     options.files.length > 0 &&

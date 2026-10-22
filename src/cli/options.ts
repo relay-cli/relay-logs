@@ -1,6 +1,10 @@
 import {compilePattern} from '../core/filter.js';
 import {type Level, levels, parseLevelName} from '../core/levels.js';
 
+export const outputFormats = ['text', 'json', 'cards'] as const;
+
+export type OutputFormat = (typeof outputFormats)[number];
+
 export interface CliOptions {
   help: boolean;
   version: boolean;
@@ -10,6 +14,8 @@ export interface CliOptions {
   follow: boolean;
   /** Print lines instead of opening the interactive viewer. */
   plain: boolean;
+  /** How printed lines are written. Any format other than text implies `plain`. */
+  format: OutputFormat;
   /** Start with only the last lines of each file. */
   lines: number | undefined;
   minLevel: Level | undefined;
@@ -35,6 +41,8 @@ Options:
   -g, --grep <re>    Show only lines matching this pattern; repeat to match any of several
   -x, --exclude <re> Hide lines matching this pattern; may be repeated
   --plain            Print lines instead of opening the viewer
+  --format <fmt>     Print lines as text (default), json, or cards for piping into
+                     relay-cards
   --color            Always color output
   --no-color         Never color output
   -h, --help         Show this help
@@ -48,6 +56,7 @@ export const parseCliOptions = (arguments_: readonly string[]): CliOptions => {
     color: undefined,
     follow: false,
     plain: false,
+    format: 'text',
     lines: undefined,
     minLevel: undefined,
     include: [],
@@ -75,6 +84,7 @@ export const parseCliOptions = (arguments_: readonly string[]): CliOptions => {
     else if (name === '-g' || name === '--grep') options.include.push(compilePattern(value()));
     else if (name === '-x' || name === '--exclude') options.exclude.push(compilePattern(value()));
     else if (argument === '--plain') options.plain = true;
+    else if (name === '--format') options.format = parseFormat(value());
     else if (argument === '--color') options.color = true;
     else if (argument === '--no-color') options.color = false;
     else throw new Error(`Unknown option: ${argument}`);
@@ -103,4 +113,12 @@ const parseLevel = (text: string): Level => {
     throw new Error(`Unknown level: ${text}. Use one of ${levels.join(', ')}`);
   }
   return level;
+};
+
+const parseFormat = (text: string): OutputFormat => {
+  const format = outputFormats.find((candidate) => candidate === text);
+  if (format === undefined) {
+    throw new Error(`Unknown format: ${text}. Use one of ${outputFormats.join(', ')}`);
+  }
+  return format;
 };

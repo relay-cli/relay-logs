@@ -60,11 +60,35 @@ relay-logs -f -g timeout -g refused -x /health api.log
 
 `-g` shows only lines matching a regular expression, and `-x` hides lines matching one. Both may be repeated. Patterns ignore case unless they contain an uppercase letter.
 
+## Use with Relay Cards
+
+`--format cards` writes each entry in the form [Relay Cards](https://github.com/relay-cli/relay-cards) turns into a card, so a followed log can be read as cards:
+
+```sh
+relay-logs -f --format cards api.log | relay-cards
+```
+
+Errors and fatal entries become error cards that collect the stack frames printed after them, warnings become warning cards, and JSON records become JSON cards. Use `-l` and `-g` to decide what reaches Relay Cards.
+
+`--format json` writes one JSON object per entry with `time`, `level`, `source`, and `message`, whatever format the log was in.
+
+## Use with Log Howl
+
+Relay Logs reads the alerts [Log Howl](https://github.com/dispersal-wolves/log-howl) prints. Each alert is shown at its severity, with the rule that raised it before the matched line and the watched file as its source:
+
+```sh
+log-howl watch --config rules.json >> alerts.jsonl &
+relay-logs -f alerts.jsonl
+```
+
+Writing alerts to a file and following it keeps the interactive viewer available. Alerts can also be piped straight through, for example `log-howl watch --config rules.json | relay-logs --format cards | relay-cards`.
+
 ## Recognized lines
 
 - Text lines with an optional leading timestamp and a level such as `ERROR`, `[warn]`, `<info>`, or `FATAL:`
 - JSON records with `level`, `lvl`, `severity`, or `levelname`, including pino and bunyan numeric levels
 - logfmt lines with `level=` and `msg=`
+- alerts from Log Howl, read at their severity with the rule name
 
 A line whose level cannot be recognized is still shown as it was written. Terminal control sequences are removed from every line before it is printed, so a log cannot move the cursor or change terminal settings.
 
